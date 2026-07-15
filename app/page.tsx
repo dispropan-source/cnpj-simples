@@ -14,6 +14,8 @@ type Company = {
   situacaoCadastral?: string;
   dataOpcao?: string | null;
   dataExclusao?: string | null;
+  cnaeCodigo?: string;
+  cnaeDescricao?: string;
   message?: string;
 };
 
@@ -25,6 +27,8 @@ type ApiCompany = {
   opcao_pelo_simples?: boolean | null;
   data_opcao_pelo_simples?: string | null;
   data_exclusao_do_simples?: string | null;
+  cnae_fiscal?: number | string | null;
+  cnae_fiscal_descricao?: string | null;
   message?: string;
 };
 
@@ -41,6 +45,13 @@ function onlyDigits(value: string) {
 function formatCnpj(value: string) {
   const digits = onlyDigits(value).padStart(14, "0");
   return digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+}
+
+// A fonte devolve o CNAE como 7 dígitos (9430800). O padrão de leitura é 9430-8/00.
+function formatCnae(value: number | string | null | undefined) {
+  const digits = onlyDigits(String(value ?? ""));
+  if (digits.length !== 7) return digits || "";
+  return `${digits.slice(0, 4)}-${digits.slice(4, 5)}/${digits.slice(5)}`;
 }
 
 function isValidCnpj(value: string) {
@@ -233,6 +244,8 @@ export default function Home() {
             situacaoCadastral: data.descricao_situacao_cadastral,
             dataOpcao: data.data_opcao_pelo_simples,
             dataExclusao: data.data_exclusao_do_simples,
+            cnaeCodigo: formatCnae(data.cnae_fiscal),
+            cnaeDescricao: data.cnae_fiscal_descricao ?? undefined,
             message: status === "nao_informado" ? "A fonte não trouxe um valor conclusivo para o Simples." : undefined,
           });
         } catch (error) {
@@ -264,11 +277,13 @@ export default function Home() {
   };
 
   const exportResults = () => {
-    const headers = ["CNPJ", "Razão social", "Nome fantasia", "Simples Nacional", "Situação cadastral", "Data da opção", "Data da exclusão", "Observação"];
+    const headers = ["CNPJ", "Razão social", "Nome fantasia", "CNAE principal", "Descrição do CNAE", "Simples Nacional", "Situação cadastral", "Data da opção", "Data da exclusão", "Observação"];
     const lines = companies.map((item) => [
       item.formattedCnpj,
       item.razaoSocial,
       item.nomeFantasia,
+      item.cnaeCodigo,
+      item.cnaeDescricao,
       statusLabel(item.status),
       item.situacaoCadastral,
       item.dataOpcao,
@@ -375,12 +390,13 @@ export default function Home() {
 
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Empresa</th><th>CNPJ</th><th>Situação</th><th>Simples Nacional</th><th>Conferência</th></tr></thead>
+              <thead><tr><th>Empresa</th><th>CNPJ</th><th>CNAE principal</th><th>Situação</th><th>Simples Nacional</th><th>Conferência</th></tr></thead>
               <tbody>
                 {filtered.slice(0, visibleCount).map((item) => (
                   <tr key={item.id}>
                     <td><strong>{item.razaoSocial || (item.status === "invalido" ? "Não consultado" : "Aguardando consulta")}</strong><span>{item.nomeFantasia || item.message || "—"}</span></td>
                     <td className="mono">{item.formattedCnpj}</td>
+                    <td>{item.cnaeCodigo ? <><strong className="mono">{item.cnaeCodigo}</strong><span>{item.cnaeDescricao || "—"}</span></> : "—"}</td>
                     <td>{item.situacaoCadastral ? <span className="registry-status">{item.situacaoCadastral}</span> : "—"}</td>
                     <td><span className={`status status-${item.status}`}><i />{statusLabel(item.status)}</span></td>
                     <td><a href={OFFICIAL_URL} target="_blank" rel="noreferrer" aria-label={`Conferir ${item.formattedCnpj} no portal oficial`}>Portal oficial ↗</a></td>

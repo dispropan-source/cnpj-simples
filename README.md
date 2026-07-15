@@ -9,6 +9,7 @@ Aplicação web para importar uma lista de CNPJs em CSV e consultar o enquadrame
 - Importação de CSV separado por vírgula ou ponto e vírgula.
 - Detecção automática da coluna `CNPJ`.
 - Validação dos dígitos verificadores.
+- CNAE principal (código e descrição) de cada CNPJ.
 - Processamento automático em lotes de 25 consultas.
 - Pausa e retomada da fila.
 - Resultados progressivos e filtros por enquadramento.
