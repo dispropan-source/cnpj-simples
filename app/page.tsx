@@ -48,10 +48,14 @@ function formatCnpj(value: string) {
 }
 
 // A fonte devolve o CNAE como 7 dígitos (9430800). O padrão de leitura é 9430-8/00.
+// Como vem em JSON como número, CNAEs das seções A e B perdem o zero à esquerda
+// (600001 = 0600-0/01) — daí o padStart antes de fatiar.
 function formatCnae(value: number | string | null | undefined) {
   const digits = onlyDigits(String(value ?? ""));
-  if (digits.length !== 7) return digits || "";
-  return `${digits.slice(0, 4)}-${digits.slice(4, 5)}/${digits.slice(5)}`;
+  if (!digits) return "";
+  if (digits.length > 7) return digits;
+  const cheio = digits.padStart(7, "0");
+  return `${cheio.slice(0, 4)}-${cheio.slice(4, 5)}/${cheio.slice(5)}`;
 }
 
 function isValidCnpj(value: string) {
